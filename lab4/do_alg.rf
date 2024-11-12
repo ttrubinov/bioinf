@@ -1,0 +1,68 @@
+val g1kv37 = file("s3://1000genomes/technical/reference/human_g1k_v37.fasta.gz")
+
+// Docker-контейнер с алгоритмом BWA
+val bwa = "biocontainers/bwa:v0.7.15_cv3"
+
+val reference = exec(image := bwa, mem := 6*GiB, cpu := 1) (out dir) {"
+	gunzip -c {{g1kv37}} > {{out}}/g1k_v37.fa || true
+	cd {{out}}
+	bwa index -a bwtsw g1k_v37.fa
+"}
+
+func align(r1, r2 file) =
+	exec(image := bwa, mem := 20*GiB, cpu := 16) (out file) {"
+		bwa mem -M -t 16 {{reference}}/g1k_v37.fa {{r1}} {{r2}} > {{out}}
+	"}
+
+// Docker-контейнер с алгоритмом samtools
+val samtools = "biocontainers/samtools:v1.7.0_cv2"
+
+func view(aln file) =
+	exec(image := samtools, mem := 20*GiB, cpu := 16) (out file) {"
+	    samtools view -but {{reference}}/g1k_v37.fa {{aln}} > {{out}}
+	"}
+
+func flagstat(aln file) =
+	exec(image := samtools, mem := 20*GiB, cpu := 16) (out file) {"
+	    samtools flagstat {{aln}} > {{out}}
+	"}
+
+func sort(aln file) =
+	exec(image := samtools, mem := 20*GiB, cpu := 16) (out file) {"
+	    samtools sort {{aln}} > {{out}}
+	"}
+
+// Docker-контейнер с алгоритмом freebayes
+val freebayes = "quay.io/biocontainers/freebayes:1.3.8--h6a68c12_1"
+
+func freebayes(aln file) =
+	exec(image := samtools, mem := 20*GiB, cpu := 16) (out file) {"
+	    freebayes {{reference}}/g1k_v37.fa {{aln}} > {{out}}
+	"}
+
+func mapped_percentage_is_greater_than_90(aln file) =
+	exec(image := "ubuntu", mem := GiB) (out file) {"
+	    mapped_percentage=$(grep "mapped" "$output_file" | head -n 1 | awk -F'[()%]' '{print $2}')
+	    echo "Mapped Percentage: ${mapped_percentage}%"
+        if (( $(echo "$mapped_percentage < 90" | bc -l) )); then
+          echo "NOT OK :("
+          0
+        else
+          echo "OK :)"
+          1
+        fi
+	"}
+
+@requires(cpu := 16, mem := 24*GiB, disk := 50*GiB)
+val Main = {
+	r1 := file("s3://1000genomes/phase3/data/HG00103/sequence_read/SRR062640_1.filt.fastq.gz")
+	r2 := file("s3://1000genomes/phase3/data/HG00103/sequence_read/SRR062640_2.filt.fastq.gz")
+	aln_sam := align(r1, r2)
+	aln_bam := view(aln_sam)
+    result_txt := flagstat(aln_bam)
+    is_greater := mapped_percentage_is_greater_than_90(result_txt)
+    if is_greater {
+        aln_sorted := sort(aln_bam)
+        freebayes := freebayes(aln_sorted)
+    }
+}
