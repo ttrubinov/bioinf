@@ -59,10 +59,10 @@ val Main = {
 	r2 := file("s3://1000genomes/phase3/data/HG00103/sequence_read/SRR062640_2.filt.fastq.gz")
 	aln_sam := align(r1, r2)
 	aln_bam := view(aln_sam)
-    result_txt := flagstat(aln_bam)
-    is_greater := mapped_percentage_is_greater_than_90(result_txt)
-    if is_greater {
-        aln_sorted := sort(aln_bam)
-        freebayes := freebayes(aln_sorted)
-    }
+	result_txt := flagstat(aln_bam)
+	is_greater := mapped_percentage_is_greater_than_90(result_txt)
+	if is_greater {
+	    aln_sorted := sort(aln_bam)
+	    freebayes := freebayes(aln_sorted)
+	}
 }
