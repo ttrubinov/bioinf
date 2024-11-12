@@ -29,6 +29,7 @@
 7. Создать dynamodb:
 
 `./reflow1.31.0.linux.amd64 setup-dynamodb-assoc reflow-quickstart`
+
 8. Создать файл с hello-world-скриптом:
 - `touch hello.rf`
 - `nano hello.rf`
@@ -38,6 +39,7 @@
 echo hello world >>{{out}}
 "}
 `
+
 9. Запускаем
 
 `./reflow1.31.0.linux.amd64 run hello.rf`
