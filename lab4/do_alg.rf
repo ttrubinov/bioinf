@@ -42,16 +42,16 @@ func freebayes(aln file) =
 
 func mapped_percentage_is_greater_than_90(aln file) =
 	exec(image := "ubuntu", mem := GiB) (out file) {"
-	    mapped_percentage=$(grep "mapped" "$output_file" | head -n 1 | awk -F'[()%]' '{print $2}')
-	    echo "Mapped Percentage: ${mapped_percentage}%"
+        mapped_percentage=$(grep "mapped" "$output_file" | head -n 1 | awk -F'[()%]' '{print $2}')
+        echo "Mapped Percentage: ${mapped_percentage}%"
         if (( $(echo "$mapped_percentage < 90" | bc -l) )); then
-          echo "NOT OK :("
-          0
+            echo "NOT OK :("
+            0
         else
-          echo "OK :)"
-          1
+            echo "OK :)"
+            1
         fi
-	"}
+    "}
 
 @requires(cpu := 16, mem := 24*GiB, disk := 50*GiB)
 val Main = {
