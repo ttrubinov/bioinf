@@ -21,6 +21,7 @@
 5. Запустить конфигурирование reflow:
 
 `./reflow1.31.0.linux.amd64 setup-ec2`
+
 6. Создать s3-репозиторий:
 
 `./reflow1.31.0.linux.amd64 setup-s3-repository reflow-quickstart-cache`
